@@ -8,8 +8,10 @@ import {
   View,
   Image,
 } from 'react-native';
+import Storage from '../components/Storage';
 
-import {InputText, UIButton, UIText} from '../components/InputComponents';
+import {InputText, UIButton, UIText, UIContainer, Constants} from '../components/InputComponents';
+import { AuthApi } from '../datastore/ApiData';
 
 export default class Signup extends Component {
   constructor(props) {
@@ -23,35 +25,58 @@ export default class Signup extends Component {
     };
   }
 
-  onButtonPress() {
-    
+  onButtonPress = () => {
+    const {name, email, phone, password} = this.state;
+    var test = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
+    if (test == false) {
+      alert('Please enter valid email');
+    } else if (name == '' || password == '' || email == '') {
+      alert('Please fill in all the required fields');
+    } else {
+      console.log({
+       name: name, email: email, phone: phone, password: password
+      })
+      AuthApi('signup', {
+       name: name, email: email, phone: phone, password: password
+      }).then(d => {
+        if(d) {
+          if(!d.error) {
+            var storeData = {id: d.id, name: d.name, email: d.email, phone: d.phone};
+            Storage.set('@user', storeData).then(d => {
+              this.props.navigation.navigate('App');
+            });
+          } else {
+            alert(d.error);
+            console.log('user_error', d.error);
+          }
+        } 
+      });
+    }
   }
 
   render() {
-    console.log('signup props nav', this.props.navigation)
     return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView>
-          <View>
+      <UIContainer>
             <View style={styles.imageView}>
-              <Image
+              {/*<Image
                 source={require('../../assets/icons/logo2.png')}
                 style={{width: 180, height: 100}}
                 resizeMode={'contain'}
-              />
-              <Text style={styles.Heading}>Sign Up</Text>
+              />*/}
+              <UIText fontWeight="bold" fontSize="32" textAlign="center" textStyles={styles.Heading}>FILLUP.PK</UIText>
+              <UIText fontSize="32" textAlign="center">Sign Up</UIText>
             </View>
 
             <InputText 
                 type="text"
-                title="Full Name" 
+                title="Full Name *" 
                 placeholder="Please enter your name" 
                 onChange={name => this.setState({name})} 
                 />
             
             <InputText 
                 type="email"
-                title="E-Mail Address" 
+                title="E-Mail Address *" 
                 placeholder="Enter your email address" 
                 onChange={email => this.setState({email})} 
                 />
@@ -64,7 +89,7 @@ export default class Signup extends Component {
 
             <InputText 
                 type="password"
-                title="Password" 
+                title="Password *" 
                 placeholder="Please enter your password" 
                 onChange={password => this.setState({password})} 
                 />
@@ -79,12 +104,10 @@ export default class Signup extends Component {
                 }}>
                 <UIText>Already a user? </UIText>
                 <UIText 
-                  onPress={() => this.props.navigation.push('Login')}
+                  onPress={() => this.props.navigation.navigate('Login')}
                   >Sign In</UIText>
             </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+          </UIContainer>
       );
   }
 }
@@ -102,7 +125,7 @@ const styles = StyleSheet.create({
     width: '100%'
   },
   Heading: {
-    color: '#fdbb56',
+    color: Constants.PRIMARY_COLOR,
     fontWeight: 'bold',
     fontSize: 30,
   },

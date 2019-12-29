@@ -11,11 +11,10 @@ import {
 
 import {NavigationActions} from 'react-navigation';
 
-import {InputText, UIButton, UIText} from '../components/InputComponents';
+import {InputText, UIButton, UIText, UIContainer, Constants} from '../components/InputComponents';
 
-import {Content} from 'native-base';
-
-import {CheckUser} from '../components/ApiData';
+import { AuthApi } from '../datastore/ApiData';
+import Storage from '../components/Storage';
 
 export default class Login extends Component {
   constructor(props) {
@@ -32,34 +31,44 @@ export default class Login extends Component {
     const {email, password} = this.state;
     var test = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
     if (test == false) {
-      alert('please enter valid email');
+      alert('Please enter valid email');
     } else if (password == '') {
-      alert('please enter password');
+      alert('Please enter your password');
     } else {
-      var user = CheckUser({ email: email, password: password });
-      if(user.error) {
-        alert(user.error);
-      }
+      AuthApi('login', {
+        email: email, password: password
+      }).then(d => {
+        if(d) {
+          if(!d.error) {
+            var storeData = {id: d.id, name: d.name, email: d.email, phone: d.phone};
+            Storage.set('@user', storeData).then(d => {
+              this.props.navigation.navigate('App');
+            });
+          } else {
+            alert(d.error)
+          }
+        } 
+      });
     }
-    this.props.navigation.navigate('Delivered');
+
   };
 
   navigateTo(routeName) {
-    var navigate = this.props.navigation.navigate(routeName);
-    console.log(navigate)
+    this.props.navigation.navigate(routeName);
+
   }
   render() {
-    console.log('login props nav', this.props.navigation);
     return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView>
+      <UIContainer>
             <View style={styles.imageView}>
-              <Image
+              {/*<Image
                 source={require('../../assets/icons/logo2.png')}
                 style={{width: 180, height: 100}}
                 resizeMode={'contain'}
-              />
-              <Text style={styles.Heading}>LogIn</Text>
+              />*/}
+
+              <UIText fontWeight="bold" fontSize="32" textAlign="center" textStyles={styles.Heading}>FILLUP.PK</UIText>
+              <UIText fontSize="32" textAlign="center">LogIn</UIText>
             </View>
 
             <InputText 
@@ -89,8 +98,7 @@ export default class Login extends Component {
                   onPress={() => this.navigateTo('Signup')}
                   >Sign Up</UIText>
             </View>
-        </ScrollView>
-      </SafeAreaView>
+        </UIContainer>
       );
   }
 }
@@ -107,7 +115,7 @@ const styles = StyleSheet.create({
     width: '100%'
   },
   Heading: {
-    color: '#fdbb56',
+    color: Constants.PRIMARY_COLOR,
     fontWeight: 'bold',
     fontSize: 30,
   },
